@@ -9,6 +9,7 @@ using RabbitMQ.Client.Events;
 using System.Text.Json;
 using Vista.Controllers.ScreenMaster3.MessageQueue.Messages;
 using System.IO;
+using System.Text.Json.Serialization;
 
 namespace Vista.Controllers.ScreenMaster3.MessageQueue
 {
@@ -41,23 +42,28 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
                 HostName = rabbitMqHost,
                 UserName = rabbitMqUser,
                 Password = rabbitMqPassword,
-                VirtualHost = rabbitMqVHost
+                VirtualHost = rabbitMqVHost,
+                DispatchConsumersAsync = true
             };
 
             jsonOptions = new JsonSerializerOptions()
             {
-                WriteIndented = true
+                WriteIndented = true,
+                Converters ={
+                    new JsonStringEnumConverter()
+                }
             };
         }
 
         public async Task<bool> Startup()
         {
-            await ShutdownAsync();
+            await ShutdownAsync().ConfigureAwait(false);
+            IsRunning = true;
 
             //Startup keyboard
-            if (!await keyboard.StartupAsync())
+            if (!await keyboard.StartupAsync().ConfigureAwait(false))
             {
-                await ShutdownAsync();
+                await ShutdownAsync().ConfigureAwait(false);
                 return false;
             }
 
@@ -84,8 +90,10 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
 
         public async Task ShutdownAsync()
         {
+            IsRunning = false;
+
             //Shutdown keybaord
-            await keyboard.ShutdownAsync();
+            await keyboard.ShutdownAsync().ConfigureAwait(false);
         }
 
         #region Action Handlers
@@ -165,7 +173,7 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
                         {
                             keyboard.SetPushButtonLamp(keyIndex, on);
                         }
-                        await keyboard.UpdateLampsAsync();
+                        await keyboard.UpdateLampsAsync().ConfigureAwait(false);
                     }
                 }
                 else if (e.RoutingKey == RoutingAddressMap.QuickKeyCommandRoutingKey)
@@ -177,12 +185,22 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
                     }
 
                     //Update buttons
+                    List<int> rowsToUpdate = msg.Buttons.Select(b => b.Index / 8).Distinct().ToList();
                     if (msg.Buttons.Count == 1)
-                        await keyboard.UpdateOneDisplayAsync(msg.Buttons[0].Index);
-                    else if (msg.Buttons.Max(b => b.Index) - msg.Buttons.Min(b => b.Index) <= 8)
-                        await keyboard.UpdateEightDisplaysAsync(msg.Buttons.Min(b => b.Index));
+                    {
+                        await keyboard.UpdateOneDisplayAsync(msg.Buttons[0].Index).ConfigureAwait(false);
+                    }
+                    else if (rowsToUpdate.Count == 1)
+                    {
+                        await keyboard.UpdateDisplayRowAsync(rowsToUpdate[0]).ConfigureAwait(false);
+                    }
                     else
-                        await keyboard.UpdateAllDisplaysAsync();
+                    {
+                        await keyboard.UpdateAllDisplaysAsync().ConfigureAwait(false);
+                    }
+
+                    //Need to update lamps to update LCD button colors
+                    await keyboard.UpdateLampsAsync().ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -199,7 +217,7 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
         private T Deserialize<T>(ReadOnlyMemory<byte> message)
         {
             string msg = Encoding.UTF8.GetString(message.Span);
-            var obj = JsonSerializer.Deserialize<T>(msg);
+            var obj = JsonSerializer.Deserialize<T>(msg, jsonOptions);
             return obj;
         }
     }
