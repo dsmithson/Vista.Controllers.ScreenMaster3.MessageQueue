@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vista.Controllers.ScreenMas
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Vista.Controllers.ScreenMaster3.MessageQueue.App", "..\Vista.Controllers.ScreenMaster3.MessageQueue.App\Vista.Controllers.ScreenMaster3.MessageQueue.App.csproj", "{5C7E9473-BF0E-4FE6-A8F5-DE01080D591B}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Vista.Controllers.ScreenMaster3", "..\..\..\Vista.Controllers.ScreenMaster3\src\Vista.Controllers.ScreenMaster3\Vista.Controllers.ScreenMaster3.csproj", "{CDFC9EED-5F7F-4EFE-A1B2-C40BC6ACB6D6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{5C7E9473-BF0E-4FE6-A8F5-DE01080D591B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5C7E9473-BF0E-4FE6-A8F5-DE01080D591B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{5C7E9473-BF0E-4FE6-A8F5-DE01080D591B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CDFC9EED-5F7F-4EFE-A1B2-C40BC6ACB6D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CDFC9EED-5F7F-4EFE-A1B2-C40BC6ACB6D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CDFC9EED-5F7F-4EFE-A1B2-C40BC6ACB6D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CDFC9EED-5F7F-4EFE-A1B2-C40BC6ACB6D6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
