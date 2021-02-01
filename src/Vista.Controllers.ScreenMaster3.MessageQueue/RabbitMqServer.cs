@@ -24,6 +24,7 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
 
         private IConnection rabbitConnection;
         private IModel rabbitChannel;
+        private AsyncEventingBasicConsumer consumer;
 
         public bool IsRunning { get; private set; }
 
@@ -49,7 +50,8 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
             jsonOptions = new JsonSerializerOptions()
             {
                 WriteIndented = true,
-                Converters ={
+                Converters =
+                {
                     new JsonStringEnumConverter()
                 }
             };
@@ -80,7 +82,7 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
             var quickKeyCommandQueue = rabbitChannel.QueueDeclare();
             rabbitChannel.QueueBind(quickKeyCommandQueue.QueueName, RoutingAddressMap.Exchange, RoutingAddressMap.QuickKeyCommandRoutingKey);
 
-            var consumer = new AsyncEventingBasicConsumer(rabbitChannel);
+            consumer = new AsyncEventingBasicConsumer(rabbitChannel);
             consumer.Received += Consumer_Received;
             rabbitChannel.BasicConsume(lampCommandQueue.QueueName, false, consumer);
             rabbitChannel.BasicConsume(quickKeyCommandQueue.QueueName, false, consumer);
@@ -94,6 +96,27 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
 
             //Shutdown keybaord
             await keyboard.ShutdownAsync().ConfigureAwait(false);
+
+            //Shutdown rabbit
+            if (consumer != null)
+            {
+                consumer.Received -= Consumer_Received;
+                consumer = null;
+            }
+
+            if (rabbitChannel != null)
+            {
+                rabbitChannel.Close();
+                rabbitChannel.Dispose();
+                rabbitChannel = null;
+            }
+
+            if (rabbitConnection != null)
+            {
+                rabbitConnection.Close();
+                rabbitConnection.Dispose();
+                rabbitConnection = null;
+            }
         }
 
         #region Action Handlers
