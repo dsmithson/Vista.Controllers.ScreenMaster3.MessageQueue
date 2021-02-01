@@ -9,6 +9,7 @@ using RabbitMQ.Client.Events;
 using System.Text.Json;
 using Vista.Controllers.ScreenMaster3.MessageQueue.Messages;
 using System.IO;
+using System.Text.Json.Serialization;
 
 namespace Vista.Controllers.ScreenMaster3.MessageQueue
 {
@@ -23,6 +24,7 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
 
         private IConnection rabbitConnection;
         private IModel rabbitChannel;
+        private AsyncEventingBasicConsumer consumer;
 
         public bool IsRunning { get; private set; }
 
@@ -41,12 +43,17 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
                 HostName = rabbitMqHost,
                 UserName = rabbitMqUser,
                 Password = rabbitMqPassword,
-                VirtualHost = rabbitMqVHost
+                VirtualHost = rabbitMqVHost,
+                DispatchConsumersAsync = true
             };
 
             jsonOptions = new JsonSerializerOptions()
             {
-                WriteIndented = true
+                WriteIndented = true,
+                Converters =
+                {
+                    new JsonStringEnumConverter()
+                }
             };
         }
 
@@ -74,7 +81,7 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
             var quickKeyCommandQueue = rabbitChannel.QueueDeclare();
             rabbitChannel.QueueBind(quickKeyCommandQueue.QueueName, RoutingAddressMap.Exchange, RoutingAddressMap.QuickKeyCommandRoutingKey);
 
-            var consumer = new AsyncEventingBasicConsumer(rabbitChannel);
+            consumer = new AsyncEventingBasicConsumer(rabbitChannel);
             consumer.Received += Consumer_Received;
             rabbitChannel.BasicConsume(lampCommandQueue.QueueName, false, consumer);
             rabbitChannel.BasicConsume(quickKeyCommandQueue.QueueName, false, consumer);
@@ -86,6 +93,27 @@ namespace Vista.Controllers.ScreenMaster3.MessageQueue
         {
             //Shutdown keybaord
             await keyboard.ShutdownAsync();
+
+            //Shutdown rabbit
+            if (consumer != null)
+            {
+                consumer.Received -= Consumer_Received;
+                consumer = null;
+            }
+
+            if (rabbitChannel != null)
+            {
+                rabbitChannel.Close();
+                rabbitChannel.Dispose();
+                rabbitChannel = null;
+            }
+
+            if (rabbitConnection != null)
+            {
+                rabbitConnection.Close();
+                rabbitConnection.Dispose();
+                rabbitConnection = null;
+            }
         }
 
         #region Action Handlers
