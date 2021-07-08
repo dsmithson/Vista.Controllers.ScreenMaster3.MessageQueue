@@ -1,0 +1,18 @@
+[Unit]
+Description=Vista ScreenMaster3 to RabbitMQ Translator App
+After=network.target
+
+[Service]
+ExecStart=/mnt/data/consoleMsgQueueApp/Vista.Controllers.ScreenMaster3.MessageQueue.App
+WorkingDirectory=/mnt/data/consoleMsgQueueApp
+StandardOutput=inherit
+StandardError=inherit
+Restart=always
+User=pi
+
+# This environment variable is necessary when dotnet isn't loaded for the specified user.
+# To figure out this value, run 'env | grep DOTNET_ROOT' when dotnet has been loaded into your shell.
+Environment=DOTNET_ROOT=/opt/dotnet
+
+[Install]
+WantedBy=multi-user.target
